@@ -95,7 +95,8 @@ init() ->
     {ok, Status} = cluster_status_from_mnesia(),
     io:format("Cluster status ~p~n", [Status]),
 
-    rabbit_node_monitor:write_cluster_status(Status),
+    %% TODO: rabbit_node_monitor
+    % rabbit_node_monitor:write_cluster_status(Status),
 
     % rabbit_node_monitor:update_cluster_status(),
 
@@ -119,7 +120,8 @@ init() ->
     %% We intuitively expect the global name server to be synced when
     %% Mnesia is up. In fact that's not guaranteed to be the case -
     %% let's make it so.
-    ok = rabbit_node_monitor:global_sync(),
+    %% TODO: rabbit_node_monitor
+    % ok = rabbit_node_monitor:global_sync(),
     ok.
 
 wait_for_tables() ->
@@ -267,7 +269,8 @@ join_cluster(DiscoveryNode, NodeType) ->
                     ok = init_db_with_mnesia(ClusterNodes, NodeType,
                                              true, true, _Retry = true),
                     rabbit_connection_tracking:boot(),
-                    rabbit_node_monitor:notify_joined_cluster(),
+                    %% TODO: rabbit_node_monitor
+                    % rabbit_node_monitor:notify_joined_cluster(),
                     ok;
                 {error, Reason} ->
                     {error, Reason}
@@ -326,7 +329,8 @@ wipe() ->
     [erlang:disconnect_node(N) || N <- cluster_nodes(all)],
     %% remove persisted messages and any other garbage we find
     ok = rabbit_file:recursive_delete(filelib:wildcard(dir() ++ "/*")),
-    ok = rabbit_node_monitor:reset_cluster_status(),
+    %% TODO: rabbit_node_monitor
+    % ok = rabbit_node_monitor:reset_cluster_status(),
     ok.
 
 -spec change_cluster_node_type(node_type()) -> 'ok'.
@@ -353,14 +357,15 @@ change_cluster_node_type(Type) ->
 update_cluster_nodes(DiscoveryNode) ->
     ensure_mnesia_not_running(),
     ensure_mnesia_dir(),
-    Status = {AllNodes, _, _} = discover_cluster([DiscoveryNode]),
+    _Status = {AllNodes, _, _} = discover_cluster([DiscoveryNode]),
     case me_in_nodes(AllNodes) of
         true ->
             %% As in `check_consistency/0', we can safely delete the
             %% schema here, since it'll be replicated from the other
             %% nodes
             mnesia:delete_schema([node()]),
-            rabbit_node_monitor:write_cluster_status(Status),
+            %% TODO: rabbit_node_monitor
+            % rabbit_node_monitor:write_cluster_status(Status),
             rabbit_log:info("Updating cluster nodes from ~p~n",
                             [DiscoveryNode]),
             init_db_with_mnesia(AllNodes, node_type(), true, true, _Retry = false);
@@ -454,9 +459,10 @@ status() ->
                 []
         end.
 
-mnesia_partitions(Nodes) ->
-    Replies = rabbit_node_monitor:partitions(Nodes),
-    [Reply || Reply = {_, R} <- Replies, R =/= []].
+mnesia_partitions(_Nodes) -> [].
+    %% TODO: rabbit_node_monitor
+    % Replies = rabbit_node_monitor:partitions(Nodes),
+    % [Reply || Reply = {_, R} <- Replies, R =/= []].
 
 is_running() ->
     % TODO mnevis
@@ -539,12 +545,15 @@ cluster_status(WhichNodes) ->
             {ok, Nodes0} ->
                 Nodes0;
             {error, _Reason} ->
-                {AllNodes0, DiscNodes0, RunningNodes0} =
-                    rabbit_node_monitor:read_cluster_status(),
+                %% TODO: rabbit_node_monitor
+                %% Read cluster status from offline mnevis?
+                {[], [], []}
+                % {AllNodes0, DiscNodes0, RunningNodes0} =
+                    % rabbit_node_monitor:read_cluster_status(),
                 %% The cluster status file records the status when the node is
                 %% online, but we know for sure that the node is offline now, so
                 %% we can remove it from the list of running nodes.
-                {AllNodes0, DiscNodes0, nodes_excl_me(RunningNodes0)}
+                % {AllNodes0, DiscNodes0, nodes_excl_me(RunningNodes0)}
         end,
     case WhichNodes of
         status  -> Nodes;
@@ -561,13 +570,14 @@ node_info() ->
 
 -spec node_type() -> node_type().
 
-node_type() ->
-    {_AllNodes, DiscNodes, _RunningNodes} =
-        rabbit_node_monitor:read_cluster_status(),
-    case DiscNodes =:= [] orelse me_in_nodes(DiscNodes) of
-        true  -> disc;
-        false -> ram
-    end.
+node_type() -> disc.
+    %% TODO: rabbit_node_monitor
+    % {_AllNodes, DiscNodes, _RunningNodes} =
+    %     rabbit_node_monitor:read_cluster_status(),
+    % case DiscNodes =:= [] orelse me_in_nodes(DiscNodes) of
+    %     true  -> disc;
+    %     false -> ram
+    % end.
 
 -spec dir() -> file:filename().
 
@@ -608,7 +618,8 @@ init_db(ClusterNodes, NodeType, CheckOtherNodes) ->
     end,
     ensure_feature_flags_are_in_sync(Nodes, NodeIsVirgin),
     ensure_schema_integrity(),
-    rabbit_node_monitor:update_cluster_status(),
+    %% TODO: rabbit_node_monitor
+    % rabbit_node_monitor:update_cluster_status(),
     ok.
 
 -spec init_db_unchecked([node()], node_type()) -> 'ok'.
@@ -727,7 +738,7 @@ check_cluster_consistency() ->
            {error, not_found},
            nodes_excl_me(cluster_nodes(all)))
     of
-        {ok, Status = {RemoteAllNodes, _, _}} ->
+        {ok, _Status = {RemoteAllNodes, _, _}} ->
             case ordsets:is_subset(ordsets:from_list(cluster_nodes(all)),
                                    ordsets:from_list(RemoteAllNodes)) of
                 true  ->
@@ -748,7 +759,9 @@ check_cluster_consistency() ->
                     %% nodes.
                     mnesia:delete_schema([node()])
             end,
-            rabbit_node_monitor:write_cluster_status(Status);
+            ok;
+            %% TODO: rabbit_node_monitor
+            % rabbit_node_monitor:write_cluster_status(Status);
         {error, not_found} ->
             ok;
         {error, _} = E ->
@@ -897,7 +910,8 @@ remove_node_if_mnesia_running(Node) ->
             case mnesia:del_table_copy(schema, Node) of
                 {atomic, ok} ->
                     rabbit_amqqueue:forget_all_durable(Node),
-                    rabbit_node_monitor:notify_left_cluster(Node),
+                    %% TODO: rabbit_node_monitor
+                    % rabbit_node_monitor:notify_left_cluster(Node),
                     ok;
                 {aborted, Reason} ->
                     {error, {failed_to_remove_node, Node, Reason}}

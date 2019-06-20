@@ -61,10 +61,12 @@ node_health_check(list_queues) ->
     health_check_queues(rabbit_vhost:list());
 
 node_health_check(rabbit_node_monitor) ->
-    case rabbit_node_monitor:partitions() of
-        L when is_list(L) ->
-            ok
-    end;
+    ok;
+    %% TODO: rabbit_node_monitor
+    % case rabbit_node_monitor:partitions() of
+        % L when is_list(L) ->
+            % ok
+    % end;
 
 node_health_check(alarms) ->
     case proplists:get_value(alarms, rabbit:status()) of

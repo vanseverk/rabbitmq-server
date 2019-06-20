@@ -150,12 +150,12 @@
                     {requires,    kernel_ready},
                     {enables,     core_initialized}]}).
 
--rabbit_boot_step({rabbit_node_monitor,
-                   [{description, "node monitor"},
-                    {mfa,         {rabbit_sup, start_restartable_child,
-                                   [rabbit_node_monitor]}},
-                    {requires,    [rabbit_alarm, guid_generator]},
-                    {enables,     core_initialized}]}).
+% -rabbit_boot_step({rabbit_node_monitor,
+%                    [{description, "node monitor"},
+%                     {mfa,         {rabbit_sup, start_restartable_child,
+%                                    [rabbit_node_monitor]}},
+%                     {requires,    [rabbit_alarm, guid_generator]},
+%                     {enables,     core_initialized}]}).
 
 -rabbit_boot_step({rabbit_epmd_monitor,
                    [{description, "epmd monitor"},
@@ -234,15 +234,15 @@
                     {requires,    pre_flight}
                     ]}).
 
--rabbit_boot_step({notify_cluster,
-                   [{description, "notifies cluster peers of our presence"},
-                    {mfa,         {rabbit_node_monitor, notify_node_up, []}},
-                    {requires,    pre_flight}]}).
+% -rabbit_boot_step({notify_cluster,
+%                    [{description, "notifies cluster peers of our presence"},
+%                     {mfa,         {rabbit_node_monitor, notify_node_up, []}},
+%                     {requires,    pre_flight}]}).
 
 -rabbit_boot_step({networking,
                    [{description, "TCP and TLS listeners"},
                     {mfa,         {rabbit_networking, boot, []}},
-                    {requires,    notify_cluster}]}).
+                    {requires,    pre_flight}]}).
 
 %%---------------------------------------------------------------------------
 
@@ -292,7 +292,8 @@ start() ->
                      rabbit_hipe:log_hipe_result(HipeResult),
                      Apps = load_all_apps(),
                      rabbit_feature_flags:initialize_registry(),
-                     rabbit_node_monitor:prepare_cluster_status_files(),
+                     %% TODO: rabbit_node_monitor
+                     % rabbit_node_monitor:prepare_cluster_status_files(),
                      % rabbit_mnesia:check_cluster_consistency(),
                      broker_start(Apps)
              end).

@@ -646,12 +646,13 @@ exchange_options(Table) ->
 
 transform(TableName, Fun, FieldList) ->
     rabbit_table:wait([TableName]),
-    {atomic, ok} = mnesia:transform_table(TableName, Fun, FieldList),
+    %% TODO: make sure there is no conflicts
+    {atomic, ok} = mnevis:transform_table(TableName, Fun, FieldList),
     ok.
 
 transform(TableName, Fun, FieldList, NewRecordName) ->
     rabbit_table:wait([TableName]),
-    {atomic, ok} = mnesia:transform_table(TableName, Fun, FieldList,
+    {atomic, ok} = mnevis:transform_table(TableName, Fun, FieldList,
                                           NewRecordName),
     ok.
 
