@@ -305,20 +305,20 @@ record_version_to_use() ->
 -spec upgrade(amqqueue()) -> amqqueue().
 
 upgrade(#amqqueue{} = Queue) -> Queue;
-upgrade(OldQueue)            -> upgrade_to(record_version_to_use(), OldQueue).
+upgrade(OldQueue)            -> upgrade_to(OldQueue, record_version_to_use()).
 
 -spec upgrade_to
-(amqqueue_v2, amqqueue()) -> amqqueue_v2();
-(amqqueue_v1, amqqueue_v1:amqqueue_v1()) -> amqqueue_v1:amqqueue_v1().
+(amqqueue(), amqqueue_v2) -> amqqueue_v2();
+(amqqueue_v1:amqqueue_v1(), amqqueue_v1) -> amqqueue_v1:amqqueue_v1().
 
-upgrade_to(?record_version, #amqqueue{} = Queue) ->
+upgrade_to(#amqqueue{} = Queue, ?record_version) ->
     Queue;
-upgrade_to(?record_version, OldQueue) ->
+upgrade_to(OldQueue, ?record_version) ->
     Fields = erlang:tuple_to_list(OldQueue) ++ [?amqqueue_v1_type,
                                                 undefined],
     #amqqueue{} = erlang:list_to_tuple(Fields);
-upgrade_to(Version, OldQueue) ->
-    amqqueue_v1:upgrade_to(Version, OldQueue).
+upgrade_to(OldQueue, Version) ->
+    amqqueue_v1:upgrade_to(OldQueue, Version).
 
 % arguments
 
